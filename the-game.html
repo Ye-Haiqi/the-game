@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boss Fighting Game</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #222;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            background-color: black;
+            display: block;
+            margin: auto;
+        }
+        .menu, .game-over {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Boss Fighting Game</h1>
+    <div id="menu" class="menu">
+        <button onclick="startGame('easy')">Easy Mode</button>
+        <button onclick="startGame('normal')">Normal Mode</button>
+        <button onclick="startGame('hard')">Hard Mode</button>
+    </div>
+    <div id="gameOver" class="game-over hidden">
+        <h2>Game Over</h2>
+        <button onclick="restartGame()">Restart</button>
+    </div>
+    <canvas id="gameCanvas" class="hidden" width="800" height="400"></canvas>
+    <script>
+        let gameMode = "normal";
+        let gameRunning = false;
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const menu = document.getElementById("menu");
+        const gameOverScreen = document.getElementById("gameOver");
+
+        const player = { x: 100, y: 200, width: 50, height: 50, color: 'blue', health: 100 };
+        const boss = { x: 600, y: 150, width: 80, height: 80, color: 'red', health: 200 };
+        
+        function startGame(mode) {
+            gameMode = mode;
+            menu.classList.add("hidden");
+            gameOverScreen.classList.add("hidden");
+            canvas.classList.remove("hidden");
+            player.health = 100;
+            boss.health = 200;
+            gameRunning = true;
+            requestAnimationFrame(updateGame);
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            gameOverScreen.classList.remove("hidden");
+            canvas.classList.add("hidden");
+        }
+        
+        function restartGame() {
+            startGame(gameMode);
+        }
+        
+        function drawCharacter(character) {
+            ctx.fillStyle = character.color;
+            ctx.fillRect(character.x, character.y, character.width, character.height);
+            ctx.fillStyle = 'white';
+            ctx.fillText(`HP: ${character.health}`, character.x, character.y - 10);
+        }
+        
+        function updateGame() {
+            if (!gameRunning) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawCharacter(player);
+            drawCharacter(boss);
+            requestAnimationFrame(updateGame);
+        }
+    </script>
+</body>
+</html>
