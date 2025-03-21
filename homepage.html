@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaming Website - Starstrike & Boss Fight</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #0b1b2d;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #f2a900;
+            padding: 20px;
+            font-size: 24px;
+            color: black;
+        }
+
+        .game-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 50px;
+        }
+
+        .game-card {
+            width: 300px;
+            margin: 20px;
+            padding: 20px;
+            background-color: #2e3c56;
+            border: 2px solid #f2a900;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+
+        .game-card img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .game-card:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome to Starstrike & Boss Fight</h1>
+    </header>
+    
+    <div class="game-container">
+        <div class="game-card" onclick="navigateToGame('starstrike.html')">
+            <img src="starstrike.jpg" alt="Starstrike Game">
+            <h2>Starstrike</h2>
+        </div>
+
+        <div class="game-card" onclick="navigateToGame('bossfight.html')">
+            <img src="bossfight.jpg" alt="Boss Fight Game">
+            <h2>Boss Fight</h2>
+        </div>
+    </div>
+
+    <script>
+        function navigateToGame(gameUrl) {
+            window.location.href = gameUrl;
+        }
+    </script>
+</body>
+</html>
