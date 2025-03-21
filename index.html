@@ -1,239 +1,202 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Starstrike: Alien Invasion</title>
+    <title>Starstrike</title>
     <style>
-        /* Global styles */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #0b1b2d;
             color: white;
             margin: 0;
             padding: 0;
-        }
-
-        h1 {
-            font-size: 2.5em;
             text-align: center;
+        }
+        h1 {
             color: #f2a900;
         }
-
-        .game-container {
-            text-align: center;
-        }
-
-        header {
-            margin: 20px;
-        }
-
-        .game-info {
-            margin: 20px;
-        }
-
-        #score {
-            font-size: 1.2em;
-        }
-
-        #startBtn {
-            padding: 10px 20px;
-            background-color: #f2a900;
-            border: none;
-            font-size: 1.2em;
-            cursor: pointer;
-            color: black;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-
-        #startBtn:hover {
-            background-color: #d88a00;
-        }
-
-        footer {
-            margin-top: 40px;
-            font-size: 1em;
-        }
-
-        /* Canvas container */
-        #gameCanvas {
-            margin-top: 20px;
-            background-color: #2e3c56;
-            width: 800px;
-            height: 500px;
-            border: 2px solid #f2a900;
-            margin-left: auto;
-            margin-right: auto;
-        }
-    </style>
-</head>
-<body>
-    <div class="game-container">
-        <header>
-            <h1>Starstrike: Alien Invasion</h1>
-            <p>Your mission: Defend humanity against the Zylvani invaders.</p>
-        </header>
-        
-        <div class="game-info">
-            <button id="startBtn">Start Game</button>
-            <div id="score">
-                <span>Score: <span id="scoreValue">0</span></span>
-            </div>
-        </div>
-        
-        <div id="gameCanvas">
-            <!-- Game will be rendered here (using JavaScript to draw on canvas) -->
-        </div>
-        
-        <footer>
-            <p>&copy; 2025 Starstrike Studios</p>
-        </footer>
-    </div>
-
-    <script>
-        // Simple structure for the game logic
-
-        let score = 0;  // Score variable
-        let gameStarted = false;
-        let canvas, ctx;
-
-        window.onload = () => {
-            // Get the game canvas and context
-            canvas = document.getElementById('gameCanvas');
-            ctx = canvas.getContext('2d');
-            
-            // Add event listener to the start button
-            document.getElementById('startBtn').addEventListener('click', startGame);
-        };
-
-        function startGame() {
-            gameStarted = true;
-            document.getElementById('startBtn').style.display = 'none';  // Hide start button
-            startGameLoop();
-        }
-
-        function startGameLoop() {
-            // Reset score
-            score = 0;
-            document.getElementById('scoreValue').textContent = score;
-            
-            // Call the game loop at 60 FPS
-            setInterval(gameLoop, 1000 / 60);
-        }
-
-        function gameLoop() {
-            // Clear the canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw game elements (for now just a placeholder)
-            ctx.fillStyle = "#f2a900";  // Yellow color for the jet
-            ctx.fillRect(375, 450, 50, 50);  // Draw a simple space jet
-
-            // Simulate Alien Enemies (for now just one)
-            ctx.fillStyle = "red";  // Alien color
-            ctx.fillRect(100 + Math.sin(Date.now() / 500) * 200, 50, 50, 50);  // Simple moving alien
-            
-            // Update score and simulate score increase
-            if (gameStarted) {
-                score++;
-                document.getElementById('scoreValue').textContent = score;
-            }
-        }
-    </script>
-</body>
-</html>
-
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Fighting Game</title>
-    <style>
-        body {
-            text-align: center;
-            background-color: #222;
-            color: white;
-            font-family: Arial, sans-serif;
-        }
         canvas {
-            background-color: black;
-            display: block;
-            margin: auto;
-        }
-        .menu, .game-over {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        .hidden {
             display: none;
+            margin: 20px auto;
+            background-color: #2e3c56;
+            border: 2px solid #f2a900;
         }
-        button {
+        .difficulty-btn {
+            margin: 10px;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
+            background-color: #f2a900;
+            border: none;
+            color: black;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1>Boss Fighting Game</h1>
-    <div id="menu" class="menu">
-        <button onclick="startGame('easy')">Easy Mode</button>
-        <button onclick="startGame('normal')">Normal Mode</button>
-        <button onclick="startGame('hard')">Hard Mode</button>
+    <h1>Starstrike</h1>
+    <div id="difficultySelection">
+        <h2>Select Difficulty</h2>
+        <button class="difficulty-btn" onclick="startGame('easy')">Easy</button>
+        <button class="difficulty-btn" onclick="startGame('medium')">Medium</button>
+        <button class="difficulty-btn" onclick="startGame('hard')">Hard</button>
     </div>
-    <div id="gameOver" class="game-over hidden">
-        <h2>Game Over</h2>
-        <button onclick="restartGame()">Restart</button>
-    </div>
-    <canvas id="gameCanvas" class="hidden" width="800" height="400"></canvas>
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div id="healthDisplay"></div>
+    
     <script>
-        let gameMode = "normal";
-        let gameRunning = false;
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const menu = document.getElementById("menu");
-        const gameOverScreen = document.getElementById("gameOver");
-
-        const player = { x: 100, y: 200, width: 50, height: 50, color: 'blue', health: 100 };
-        const boss = { x: 600, y: 150, width: 80, height: 80, color: 'red', health: 200 };
+        let canvas = document.getElementById("gameCanvas");
+        let ctx = canvas.getContext("2d");
+        let player, enemies, bullets = [], enemyBullets = [], boss;
+        let gameActive = false;
         
-        function startGame(mode) {
-            gameMode = mode;
-            menu.classList.add("hidden");
-            gameOverScreen.classList.add("hidden");
-            canvas.classList.remove("hidden");
-            player.health = 100;
-            boss.health = 200;
-            gameRunning = true;
-            requestAnimationFrame(updateGame);
+        function startGame(difficulty) {
+            document.getElementById("difficultySelection").style.display = "none";
+            canvas.style.display = "block";
+            let speedMultiplier = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 1.5 : 2;
+            initGame(speedMultiplier);
+            enemies = generateAliens();
+            gameLoop();
+            setInterval(alienShoot, 2000 / speedMultiplier);
+            document.addEventListener("keydown", movePlayer);
+            document.addEventListener("keyup", stopPlayer);
+            document.addEventListener("keydown", shootBullet);
+        }
+        
+        function initGame(speedMultiplier) {
+            player = { x: 400, y: 450, width: 40, height: 40, health: 100, speed: 4 * speedMultiplier, dx: 0 };
+            bullets = [];
+            enemyBullets = [];
+            boss = null;
+            updateHealthDisplay();
+            gameActive = true;
+        }
+        
+        function updateHealthDisplay() {
+            document.getElementById("healthDisplay").innerText = `Player HP: ${player.health}`;
+        }
+        
+        function movePlayer(event) {
+            if (event.key === "ArrowLeft") player.dx = -player.speed;
+            if (event.key === "ArrowRight") player.dx = player.speed;
+        }
+        
+        function stopPlayer(event) {
+            if (event.key === "ArrowLeft" || event.key === "ArrowRight") player.dx = 0;
+        }
+        
+        function shootBullet(event) {
+            if (event.key === " ") {
+                bullets.push({ x: player.x + 18, y: player.y, width: 5, height: 10 });
+            }
+        }
+        
+        function drawBullets() {
+            ctx.fillStyle = "yellow";
+            bullets.forEach((bullet, bIndex) => {
+                bullet.y -= 5;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                if (bullet.y < 0) bullets.splice(bIndex, 1);
+                
+                enemies.forEach((alien, aIndex) => {
+                    if (
+                        bullet.x < alien.x + alien.width &&
+                        bullet.x + bullet.width > alien.x &&
+                        bullet.y < alien.y + alien.height &&
+                        bullet.y + bullet.height > alien.y
+                    ) {
+                        alien.health -= 5;
+                        bullets.splice(bIndex, 1);
+                        if (alien.health <= 0) enemies.splice(aIndex, 1);
+                    }
+                });
+            });
+        }
+        
+        function drawEnemyBullets() {
+            ctx.fillStyle = "red";
+            enemyBullets.forEach((bullet, index) => {
+                bullet.y += 3;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                if (bullet.y > canvas.height) enemyBullets.splice(index, 1);
+                
+                if (
+                    bullet.x < player.x + player.width &&
+                    bullet.x + bullet.width > player.x &&
+                    bullet.y < player.y + player.height &&
+                    bullet.y + bullet.height > player.y
+                ) {
+                    player.health -= 5;
+                    updateHealthDisplay();
+                    enemyBullets.splice(index, 1);
+                    if (player.health <= 0) gameOver();
+                }
+            });
+        }
+        
+        function alienShoot() {
+            enemies.forEach(alien => {
+                enemyBullets.push({ x: alien.x + 18, y: alien.y + 40, width: 5, height: 10 });
+            });
+        }
+        
+        function generateAliens() {
+            let alienList = [];
+            for (let i = 0; i < 6; i++) {
+                alienList.push({ x: 100 + i * 100, y: 50, width: 40, height: 40, health: 100, direction: 1 });
+            }
+            return alienList;
+        }
+        
+        function moveAliens() {
+            let edgeReached = false;
+            enemies.forEach(alien => {
+                alien.x += alien.direction * 2;
+                if (alien.x <= 0 || alien.x + alien.width >= canvas.width) {
+                    edgeReached = true;
+                }
+            });
+            if (edgeReached) {
+                enemies.forEach(alien => {
+                    alien.direction *= -1;
+                });
+            }
         }
         
         function gameOver() {
-            gameRunning = false;
-            gameOverScreen.classList.remove("hidden");
-            canvas.classList.add("hidden");
+            alert("Game Over!");
+            location.reload();
         }
         
-        function restartGame() {
-            startGame(gameMode);
-        }
-        
-        function drawCharacter(character) {
-            ctx.fillStyle = character.color;
-            ctx.fillRect(character.x, character.y, character.width, character.height);
-            ctx.fillStyle = 'white';
-            ctx.fillText(`HP: ${character.health}`, character.x, character.y - 10);
-        }
-        
-        function updateGame() {
-            if (!gameRunning) return;
+        function gameLoop() {
+            if (!gameActive) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawCharacter(player);
-            drawCharacter(boss);
-            requestAnimationFrame(updateGame);
+            player.x += player.dx;
+            drawPlayer();
+            drawBullets();
+            drawEnemyBullets();
+            if (enemies.length > 0) {
+                drawAliens();
+                moveAliens();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function drawPlayer() {
+            ctx.fillStyle = "blue";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = "white";
+            ctx.fillText(`HP: ${player.health}`, player.x, player.y - 5);
+        }
+        
+        function drawAliens() {
+            ctx.fillStyle = "red";
+            enemies.forEach(alien => {
+                ctx.fillRect(alien.x, alien.y, alien.width, alien.height);
+                ctx.fillStyle = "white";
+                ctx.fillText(`HP: ${alien.health}`, alien.x, alien.y - 5);
+            });
         }
     </script>
 </body>
