@@ -1,64 +1,30 @@
-/* CSS */
 body {
-    text-align: center;
-    background-color: #222;
+    background-color: #0b1b2d;
+    font-family: 'Arial', sans-serif;
     color: white;
-    font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    text-align: center;
+}
+
+h1 {
+    color: #f2a900;
 }
 
 canvas {
-    background-color: black;
-    display: block;
-    margin: auto;
-    margin-top: 20px;
+    display: none; /* Hidden by default */
+    margin: 20px auto;
+    background-color: #2e3c56;
+    border: 2px solid #f2a900;
 }
 
-.menu, .game-over {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-.hidden {
-    display: none;
-}
-
-button {
+.difficulty-btn {
+    margin: 10px;
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
+    background-color: #f2a900;
     border: none;
-    background-color: #4CAF50;
-    color: white;
-    border-radius: 5px;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-.health-container {
-    display: flex;
-    justify-content: space-around;
-    margin: 10px;
-}
-
-.health-bar {
-    width: 200px;
-    height: 20px;
-    background-color: red;
-    position: relative;
-    text-align: center;
+    color: black;
     font-weight: bold;
-    color: white;
-    line-height: 20px;
-}
-
-.health-bar div {
-    height: 100%;
-    background-color: green;
-    width: 100%;
 }
