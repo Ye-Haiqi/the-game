@@ -3,28 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Fighting Game</title>
+    <title>Starstrike</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Boss Fighting Game</h1>
-    <div id="menu" class="menu">
-        <button onclick="startGame()">Start Game</button>
+    <h1>Starstrike</h1>
+    <div id="difficultySelection">
+        <h2>Select Difficulty</h2>
+        <button class="difficulty-btn" onclick="startGame('easy')">Easy</button>
+        <button class="difficulty-btn" onclick="startGame('medium')">Medium</button>
+        <button class="difficulty-btn" onclick="startGame('hard')">Hard</button>
     </div>
-    <div id="gameOver" class="game-over hidden">
-        <h2>GAME OVER</h2>
-        <p>Returning to Main Menu...</p>
-    </div>
-    <div id="winScreen" class="win-screen hidden">
-        <h2>YOU WIN!</h2>
-        <p>Returning to Main Menu...</p>
-    </div>
-    <div class="health-container">
-        <div class="health-bar">Player 1 Health <div id="player1Health" style="width: 100%;"></div></div>
-        <div class="health-bar">Player 2 Health <div id="player2Health" style="width: 100%;"></div></div>
-        <div class="health-bar">Boss Health <div id="bossHealth" style="width: 100%;"></div></div>
-    </div>
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div id="healthDisplay"></div>
+    <div id="gameOverMessage" style="display: none; font-size: 24px; color: red; font-weight: bold;">Game Over</div>
     <script src="script.js"></script>
 </body>
 </html>
