@@ -1,262 +1,310 @@
-let canvas = document.getElementById("gameCanvas");
-let ctx = canvas.getContext("2d");
-let player, enemies = [], bullets = [], enemyBullets = [], boss;
-let gameActive = false;
-let alienDirection = 1;
+// JavaScript
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const menu = document.getElementById("menu");
+const gameOverScreen = document.getElementById("gameOver");
+let gameRunning = false;
+let keys = {};
+let bullets = [];
+let bossBullets = [];
+let floorY = 340;
 
-function startGame(difficulty) {
-    // Show the canvas and hide the difficulty selection screen
-    document.getElementById("difficultySelection").style.display = "none";
-    canvas.style.display = "block";
+// Track whether a bullet has been fired for each player
+let player1Fired = false; // Tracks if Player 1 has fired a bullet
+let player2Fired = false; // Tracks if Player 2 has fired a bullet
 
-    // Initialize game based on difficulty
-    let speedMultiplier = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 1.5 : 2;
-    initGame(speedMultiplier);
-    enemies = generateAliens();
-    gameLoop();
-    setInterval(alienShoot, 2000 / speedMultiplier);
+// Respawn timers (in frames, 60 frames ≈ 1 second)
+let player1RespawnTimer = 0; // Timer for Player 1 respawn
+let player2RespawnTimer = 0; // Timer for Player 2 respawn
 
-    // Add event listeners for movement and shooting
-    document.addEventListener("keydown", movePlayer);
-    document.addEventListener("keyup", stopPlayer);
-    document.addEventListener("keydown", shootBullet);
+const gravity = 0.5;
+
+function createPlayer(x, color) {
+    return { x: x, y: floorY, width: 40, height: 60, color: color, speed: 4, velocityY: 0, grounded: true, alive: true, health: 100 };
 }
 
-function initGame(speedMultiplier) {
-    // Reset player, bullets, and enemies
-    player = { x: 400, y: 450, width: 40, height: 40, health: 100, speed: 4 * speedMultiplier, dx: 0 };
-    bullets = [];
-    enemyBullets = [];
-    boss = null;
-    updateHealthDisplay();
-    gameActive = true;
-}
+let player1 = createPlayer(100, "blue");
+let player2 = createPlayer(200, "green");
 
-function generateAliens() {
-    let aliens = [];
-    for (let i = 0; i < 5; i++) {
-        aliens.push({ x: i * 100 + 50, y: 50, width: 40, height: 40, health: 100 });
-    }
-    return aliens;
-}
+// Boss properties
+let boss = { 
+    x: 600, 
+    y: floorY, 
+    width: 80, 
+    height: 120, 
+    color: "red", 
+    speed: 1, 
+    moveRange: 50, 
+    startX: 600, 
+    health: 200,
+    firingInterval: 0, // Tracks the firing interval for the mini-gun
+    burstCount: 0, // Tracks the number of bullets in the current burst
+    burstLimit: 5, // Number of bullets per burst
+    burstCooldown: 0 // Cooldown between bursts
+};
 
-function drawAliens() {
-    ctx.fillStyle = "green";
-    enemies.forEach((alien, index) => {
-        if (alien.health > 0) { // Only draw living aliens
-            ctx.fillRect(alien.x, alien.y, alien.width, alien.height);
-            ctx.fillStyle = "white";
-            ctx.fillText(`HP: ${alien.health}`, alien.x, alien.y - 5);
-            ctx.fillStyle = "green";
-        } else {
-            // Remove dead aliens from the array
-            enemies.splice(index, 1);
-        }
-    });
-
-    // Spawn boss if all aliens are defeated
-    if (enemies.length === 0 && !boss) {
-        spawnBoss();
-    }
-}
-
-function spawnBoss() {
+function startGame() {
+    gameRunning = true;
+    player1 = createPlayer(100, "blue");
+    player2 = createPlayer(200, "green");
     boss = { 
-        x: canvas.width / 2 - 50, 
-        y: 50, 
-        width: 100, 
-        height: 100, 
-        health: 300, 
-        speed: 2, 
-        moveRange: 300, 
-        startX: canvas.width / 2 - 50 
+        x: 600, 
+        y: floorY, 
+        width: 80, 
+        height: 120, 
+        color: "red", 
+        speed: 1, 
+        moveRange: 50, 
+        startX: 600, 
+        health: 200,
+        firingInterval: 0,
+        burstCount: 0,
+        burstLimit: 5,
+        burstCooldown: 0
     };
+    bullets = [];
+    bossBullets = [];
+    player1RespawnTimer = 0;
+    player2RespawnTimer = 0;
+    updateHealthBars();
+    menu.classList.add("hidden"); // Hide main menu
+    gameOverScreen.classList.add("hidden"); // Hide game-over screen
+    updateGame(); // Start the game loop
+}
+
+function restartGame() {
+    startGame(); // Restart the game
+}
+
+function updateHealthBars() {
+    player1.health = Math.max(0, Math.min(100, player1.health));
+    player2.health = Math.max(0, Math.min(100, player2.health));
+    boss.health = Math.max(0, Math.min(200, boss.health));
+
+    document.getElementById("player1Health").style.width = player1.health + "%";
+    document.getElementById("player2Health").style.width = player2.health + "%";
+    document.getElementById("bossHealth").style.width = (boss.health / 2) + "%";
+
+    // Check if both players are dead
+    if (player1.health <= 0 && player2.health <= 0 && player1RespawnTimer === 0 && player2RespawnTimer === 0) {
+        endGame(false); // Game Over (Players lose)
+    }
+
+    // Check if the boss is defeated
+    if (boss.health <= 0) {
+        endGame(true); // Players win
+    }
+}
+
+function endGame(won) {
+    gameRunning = false;
+
+    // Show the main menu after a short delay
+    setTimeout(() => {
+        menu.classList.remove("hidden"); // Show main menu
+        gameOverScreen.classList.add("hidden"); // Hide game-over screen
+    }, 2000); // 2-second delay before returning to the main menu
+}
+
+function handleMovement() {
+    if (player1.alive && keys["ArrowLeft"] && player1.x > 0) player1.x -= player1.speed;
+    if (player1.alive && keys["ArrowRight"] && player1.x < canvas.width - player1.width) player1.x += player1.speed;
+    if (player1.alive && keys["ArrowUp"] && player1.grounded) { player1.velocityY = -10; player1.grounded = false; }
+
+    if (player2.alive && keys["a"] && player2.x > 0) player2.x -= player2.speed;
+    if (player2.alive && keys["d"] && player2.x < canvas.width - player2.width) player2.x += player2.speed;
+    if (player2.alive && keys["w"] && player2.grounded) { player2.velocityY = -10; player2.grounded = false; }
+}
+
+function shootBullets(player, firedRef) {
+    if (!firedRef && player.alive) { // Only fire if no bullet has been fired yet and the player is alive
+        bullets.push({ x: player.x + player.width / 2, y: player.y + player.height / 2, speed: 10 });
+        firedRef = true; // Mark that a bullet has been fired
+    }
+    return firedRef;
+}
+
+function moveBullets() {
+    bullets = bullets.filter(bullet => bullet.x < canvas.width);
+    bullets.forEach(bullet => bullet.x += bullet.speed);
+
+    bossBullets = bossBullets.filter(bullet => bullet.x > 0);
+    bossBullets.forEach(bullet => bullet.x += bullet.speed);
+}
+
+function applyGravity(player) {
+    if (player.alive) {
+        player.y += player.velocityY;
+        player.velocityY += gravity;
+        if (player.y >= floorY) { player.y = floorY; player.grounded = true; }
+    }
 }
 
 function moveBoss() {
-    if (!boss) return;
-
     boss.x += boss.speed;
     if (boss.x > boss.startX + boss.moveRange || boss.x < boss.startX - boss.moveRange) {
-        boss.speed *= -1; // Reverse direction
+        boss.speed *= -1;
     }
 }
 
-function drawBoss() {
-    if (!boss) return;
-
-    ctx.fillStyle = "red";
-    ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
-    ctx.fillStyle = "white";
-    ctx.fillText(`BOSS HP: ${boss.health}`, boss.x, boss.y - 5);
-}
-
-function bossShoot() {
-    if (!boss) return;
-
-    // Boss shoots multiple bullets in a spread pattern
-    const bulletCount = 5; // Number of bullets in the spread
-    for (let i = 0; i < bulletCount; i++) {
-        const angle = (i - Math.floor(bulletCount / 2)) * 0.1; // Spread angle
-        enemyBullets.push({
-            x: boss.x + boss.width / 2,
-            y: boss.y + boss.height,
-            width: 5,
-            height: 10,
-            dx: Math.sin(angle) * 3, // Horizontal velocity
-            dy: 3 // Vertical velocity
-        });
-    }
-}
-
-function moveAliens() {
-    let edgeReached = false;
-    enemies.forEach(alien => {
-        alien.x += alienDirection * 2;
-        if (alien.x <= 0 || alien.x + alien.width >= canvas.width) {
-            edgeReached = true;
+function shootBossMiniGun() {
+    if (boss.burstCooldown <= 0) {
+        if (boss.firingInterval <= 0 && boss.burstCount < boss.burstLimit) {
+            // Fire a bullet
+            const bulletOffset = Math.random() * 20 - 10; // Random offset for spread effect
+            bossBullets.push({ x: boss.x, y: boss.y + boss.height / 2 + bulletOffset, speed: -7 });
+            boss.firingInterval = 5; // Reset firing interval (in frames)
+            boss.burstCount++;
+        } else {
+            boss.firingInterval--;
         }
+
+        if (boss.burstCount >= boss.burstLimit) {
+            boss.burstCooldown = 60; // Cooldown between bursts (1 second)
+            boss.burstCount = 0;
+        }
+    } else {
+        boss.burstCooldown--;
+    }
+}
+
+function checkCollisions() {
+    // Player bullets hitting boss
+    bullets = bullets.filter(bullet => {
+        if (bullet.x < boss.x + boss.width && bullet.x + 5 > boss.x &&
+            bullet.y < boss.y + boss.height && bullet.y + 5 > boss.y) {
+            boss.health -= 2; // Sniper bullets deal 2 damage
+            return false; // Remove bullet
+        }
+        return true;
     });
-    if (edgeReached) {
-        alienDirection *= -1;
-        enemies.forEach(alien => alien.y += 20); // Move aliens down when edge is reached
-    }
+
+    // Boss bullets hitting players
+    bossBullets = bossBullets.filter(bullet => {
+        let hitPlayer1 = false, hitPlayer2 = false;
+
+        if (player1.alive &&
+            bullet.x < player1.x + player1.width && bullet.x + 5 > player1.x &&
+            bullet.y < player1.y + player1.height && bullet.y + 5 > player1.y) {
+            player1.health -= 10;
+            hitPlayer1 = true;
+        }
+
+        if (player2.alive &&
+            bullet.x < player2.x + player2.width && bullet.x + 5 > player2.x &&
+            bullet.y < player2.y + player2.height && bullet.y + 5 > player2.y) {
+            player2.health -= 10;
+            hitPlayer2 = true;
+        }
+
+        // Handle player death and respawn timer
+        if (player1.health <= 0 && player1RespawnTimer === 0) {
+            player1.alive = false;
+            player1RespawnTimer = 300; // 5 seconds (300 frames)
+        }
+
+        if (player2.health <= 0 && player2RespawnTimer === 0) {
+            player2.alive = false;
+            player2RespawnTimer = 300; // 5 seconds (300 frames)
+        }
+
+        return !(hitPlayer1 || hitPlayer2); // Remove bullet if it hits a player
+    });
 }
 
-function updateHealthDisplay() {
-    document.getElementById("healthDisplay").innerText = `Player HP: ${player.health}`;
-}
-
-function movePlayer(event) {
-    if (event.key === "ArrowLeft") player.dx = -player.speed;
-    if (event.key === "ArrowRight") player.dx = player.speed;
-}
-
-function stopPlayer(event) {
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") player.dx = 0;
-}
-
-function shootBullet(event) {
-    if (event.key === " ") {
-        bullets.push({ x: player.x + 18, y: player.y, width: 5, height: 10 });
-    }
+function drawCharacter(character) {
+    ctx.fillStyle = character.color;
+    ctx.fillRect(character.x, character.y, character.width, character.height);
 }
 
 function drawBullets() {
     ctx.fillStyle = "yellow";
-    bullets.forEach((bullet, index) => {
-        bullet.y -= 5;
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-        if (bullet.y < 0) bullets.splice(index, 1);
-    });
+    bullets.forEach(bullet => ctx.fillRect(bullet.x, bullet.y, 3, 3)); // Smaller sniper bullets
+    ctx.fillStyle = "orange";
+    bossBullets.forEach(bullet => ctx.fillRect(bullet.x, bullet.y, 5, 5));
 }
 
-function drawEnemyBullets() {
-    ctx.fillStyle = "red";
-    enemyBullets.forEach((bullet, index) => {
-        bullet.x += bullet.dx || 0; // Apply horizontal velocity if present
-        bullet.y += bullet.dy || 3; // Default vertical velocity
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-        if (bullet.y > canvas.height) enemyBullets.splice(index, 1);
-    });
-}
+function drawGameOver() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-function alienShoot() {
-    enemies.forEach(alien => {
-        enemyBullets.push({ x: alien.x + 15, y: alien.y + 40, width: 5, height: 10 });
-    });
-}
-
-function drawPlayer() {
-    ctx.fillStyle = "blue";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.fillStyle = "white";
-    ctx.fillText(`HP: ${player.health}`, player.x, player.y - 5);
+    ctx.font = "48px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+
+    ctx.font = "24px Arial";
+    ctx.fillText("Returning to Main Menu...", canvas.width / 2, canvas.height / 2 + 50);
 }
 
-function checkCollisions() {
-    // Check collisions between player's bullets and aliens
-    bullets.forEach((bullet, bulletIndex) => {
-        enemies.forEach((alien, alienIndex) => {
-            if (
-                bullet.x < alien.x + alien.width &&
-                bullet.x + bullet.width > alien.x &&
-                bullet.y < alien.y + alien.height &&
-                bullet.y + bullet.height > alien.y
-            ) {
-                alien.health -= 20; // Reduce alien's health
-                bullets.splice(bulletIndex, 1); // Remove bullet
-            }
-        });
+function drawWinScreen() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Check collisions between player's bullets and boss
-        if (boss && 
-            bullet.x < boss.x + boss.width &&
-            bullet.x + bullet.width > boss.x &&
-            bullet.y < boss.y + boss.height &&
-            bullet.y + bullet.height > boss.y
-        ) {
-            boss.health -= 10; // Reduce boss's health
-            bullets.splice(bulletIndex, 1); // Remove bullet
+    ctx.fillStyle = "white";
+    ctx.font = "48px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("YOU WIN!", canvas.width / 2, canvas.height / 2);
 
-            if (boss.health <= 0) {
-                endGame(true); // Player wins
-            }
-        }
-    });
-
-    // Check collisions between enemy bullets and player
-    enemyBullets.forEach((bullet, index) => {
-        if (
-            bullet.x > player.x &&
-            bullet.x < player.x + player.width &&
-            bullet.y > player.y &&
-            bullet.y < player.y + player.height
-        ) {
-            player.health -= 5;
-            enemyBullets.splice(index, 1);
-            updateHealthDisplay();
-            if (player.health <= 0) {
-                endGame(false); // Player loses
-            }
-        }
-    });
+    ctx.font = "24px Arial";
+    ctx.fillText("Returning to Main Menu...", canvas.width / 2, canvas.height / 2 + 50);
 }
 
-function endGame(won) {
-    gameActive = false;
-
-    if (won) {
-        alert("You defeated the boss! You win!");
-    } else {
-        alert("Game Over! You lost!");
+function updateGame() {
+    if (!gameRunning) {
+        return;
     }
 
-    // Return to the choice page after 2 seconds
-    setTimeout(() => {
-        document.getElementById("difficultySelection").style.display = "block"; // Show choice page
-        canvas.style.display = "none"; // Hide canvas
-        document.getElementById("gameOverMessage").style.display = "none"; // Hide game-over message
-    }, 2000); // 2-second delay before returning to the choice page
-}
-
-function gameLoop() {
-    if (!gameActive) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    player.x += player.dx;
-    moveAliens();
-    moveBoss();
-    drawPlayer();
-    drawBullets();
-    drawAliens();
-    drawBoss();
-    drawEnemyBullets();
-    checkCollisions();
 
-    // Boss shooting every 2 seconds
-    if (boss && Math.random() < 0.01) {
-        bossShoot();
+    // Update respawn timers
+    if (player1RespawnTimer > 0) {
+        player1RespawnTimer--;
+        if (player1RespawnTimer === 0) {
+            player1 = createPlayer(100, "blue"); // Respawn Player 1
+        }
     }
 
-    requestAnimationFrame(gameLoop);
+    if (player2RespawnTimer > 0) {
+        player2RespawnTimer--;
+        if (player2RespawnTimer === 0) {
+            player2 = createPlayer(200, "green"); // Respawn Player 2
+        }
+    }
+
+    handleMovement();
+
+    // Shoot bullets only on key press
+    if (keys[" "] && !player1Fired) player1Fired = shootBullets(player1, player1Fired);
+    if (keys["s"] && !player2Fired) player2Fired = shootBullets(player2, player2Fired);
+
+    moveBoss();
+    applyGravity(player1);
+    applyGravity(player2);
+    moveBullets();
+    shootBossMiniGun(); // Boss shoots mini-gun bullets
+    checkCollisions();
+    updateHealthBars();
+    drawCharacter(player1);
+    drawCharacter(player2);
+    drawCharacter(boss); // Draw the boss
+    drawBullets();
+    requestAnimationFrame(updateGame);
 }
+
+window.addEventListener("keydown", (e) => {
+    keys[e.key] = true;
+
+    // Restart game when 'R' is pressed
+    if (e.key === "r" && !gameRunning) {
+        startGame();
+    }
+});
+
+window.addEventListener("keyup", (e) => {
+    keys[e.key] = false;
+
+    // Reset fired state when the key is released
+    if (e.key === " ") player1Fired = false;
+    if (e.key === "s") player2Fired = false;
+});
