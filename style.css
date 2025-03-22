@@ -1,203 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Starstrike</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #0b1b2d;
-            color: white;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
-        h1 {
-            color: #f2a900;
-        }
-        canvas {
-            display: none;
-            margin: 20px auto;
-            background-color: #2e3c56;
-            border: 2px solid #f2a900;
-        }
-        .difficulty-btn {
-            margin: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #f2a900;
-            border: none;
-            color: black;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <h1>Starstrike</h1>
-    <div id="difficultySelection">
-        <h2>Select Difficulty</h2>
-        <button class="difficulty-btn" onclick="startGame('easy')">Easy</button>
-        <button class="difficulty-btn" onclick="startGame('medium')">Medium</button>
-        <button class="difficulty-btn" onclick="startGame('hard')">Hard</button>
-    </div>
-    <canvas id="gameCanvas" width="800" height="500"></canvas>
-    <div id="healthDisplay"></div>
-    
-    <script>
-        let canvas = document.getElementById("gameCanvas");
-        let ctx = canvas.getContext("2d");
-        let player, enemies, bullets = [], enemyBullets = [], boss;
-        let gameActive = false;
-        
-        function startGame(difficulty) {
-            document.getElementById("difficultySelection").style.display = "none";
-            canvas.style.display = "block";
-            let speedMultiplier = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 1.5 : 2;
-            initGame(speedMultiplier);
-            enemies = generateAliens();
-            gameLoop();
-            setInterval(alienShoot, 2000 / speedMultiplier);
-            document.addEventListener("keydown", movePlayer);
-            document.addEventListener("keyup", stopPlayer);
-            document.addEventListener("keydown", shootBullet);
-        }
-        
-        function initGame(speedMultiplier) {
-            player = { x: 400, y: 450, width: 40, height: 40, health: 100, speed: 4 * speedMultiplier, dx: 0 };
-            bullets = [];
-            enemyBullets = [];
-            boss = null;
-            updateHealthDisplay();
-            gameActive = true;
-        }
-        
-        function updateHealthDisplay() {
-            document.getElementById("healthDisplay").innerText = `Player HP: ${player.health}`;
-        }
-        
-        function movePlayer(event) {
-            if (event.key === "ArrowLeft") player.dx = -player.speed;
-            if (event.key === "ArrowRight") player.dx = player.speed;
-        }
-        
-        function stopPlayer(event) {
-            if (event.key === "ArrowLeft" || event.key === "ArrowRight") player.dx = 0;
-        }
-        
-        function shootBullet(event) {
-            if (event.key === " ") {
-                bullets.push({ x: player.x + 18, y: player.y, width: 5, height: 10 });
-            }
-        }
-        
-        function drawBullets() {
-            ctx.fillStyle = "yellow";
-            bullets.forEach((bullet, bIndex) => {
-                bullet.y -= 5;
-                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-                if (bullet.y < 0) bullets.splice(bIndex, 1);
-                
-                enemies.forEach((alien, aIndex) => {
-                    if (
-                        bullet.x < alien.x + alien.width &&
-                        bullet.x + bullet.width > alien.x &&
-                        bullet.y < alien.y + alien.height &&
-                        bullet.y + bullet.height > alien.y
-                    ) {
-                        alien.health -= 5;
-                        bullets.splice(bIndex, 1);
-                        if (alien.health <= 0) enemies.splice(aIndex, 1);
-                    }
-                });
-            });
-        }
-        
-        function drawEnemyBullets() {
-            ctx.fillStyle = "red";
-            enemyBullets.forEach((bullet, index) => {
-                bullet.y += 3;
-                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-                if (bullet.y > canvas.height) enemyBullets.splice(index, 1);
-                
-                if (
-                    bullet.x < player.x + player.width &&
-                    bullet.x + bullet.width > player.x &&
-                    bullet.y < player.y + player.height &&
-                    bullet.y + bullet.height > player.y
-                ) {
-                    player.health -= 5;
-                    updateHealthDisplay();
-                    enemyBullets.splice(index, 1);
-                    if (player.health <= 0) gameOver();
-                }
-            });
-        }
-        
-        function alienShoot() {
-            enemies.forEach(alien => {
-                enemyBullets.push({ x: alien.x + 18, y: alien.y + 40, width: 5, height: 10 });
-            });
-        }
-        
-        function generateAliens() {
-            let alienList = [];
-            for (let i = 0; i < 6; i++) {
-                alienList.push({ x: 100 + i * 100, y: 50, width: 40, height: 40, health: 100, direction: 1 });
-            }
-            return alienList;
-        }
-        
-        function moveAliens() {
-            let edgeReached = false;
-            enemies.forEach(alien => {
-                alien.x += alien.direction * 2;
-                if (alien.x <= 0 || alien.x + alien.width >= canvas.width) {
-                    edgeReached = true;
-                }
-            });
-            if (edgeReached) {
-                enemies.forEach(alien => {
-                    alien.direction *= -1;
-                });
-            }
-        }
-        
-        function gameOver() {
-            alert("Game Over!");
-            location.reload();
-        }
-        
-        function gameLoop() {
-            if (!gameActive) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            player.x += player.dx;
-            drawPlayer();
-            drawBullets();
-            drawEnemyBullets();
-            if (enemies.length > 0) {
-                drawAliens();
-                moveAliens();
-            }
-            requestAnimationFrame(gameLoop);
-        }
-        
-        function drawPlayer() {
-            ctx.fillStyle = "blue";
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            ctx.fillStyle = "white";
-            ctx.fillText(`HP: ${player.health}`, player.x, player.y - 5);
-        }
-        
-        function drawAliens() {
-            ctx.fillStyle = "red";
-            enemies.forEach(alien => {
-                ctx.fillRect(alien.x, alien.y, alien.width, alien.height);
-                ctx.fillStyle = "white";
-                ctx.fillText(`HP: ${alien.health}`, alien.x, alien.y - 5);
-            });
-        }
-    </script>
-</body>
-</html>
+/* CSS */
+body {
+    text-align: center;
+    background-color: #222;
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+canvas {
+    background-color: black;
+    display: block;
+    margin: auto;
+    margin-top: 20px;
+}
+
+.menu, .game-over {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.health-container {
+    display: flex;
+    justify-content: space-around;
+    margin: 10px;
+}
+
+.health-bar {
+    width: 200px;
+    height: 20px;
+    background-color: red;
+    position: relative;
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    line-height: 20px;
+}
+
+.health-bar div {
+    height: 100%;
+    background-color: green;
+    width: 100%;
+}
